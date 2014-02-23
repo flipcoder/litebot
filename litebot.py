@@ -106,13 +106,10 @@ while True:
             chop = msg.find(" ")
             if chop != -1:
                 cmd = msg[chop:]
-                print "before chop: %s" % msg
                 msg = msg[:chop+1]
             else:
                 cmd = msg
                 msg = ""
-            print "command: %s" % cmd
-            print "msg: %s" % msg
             serv.on_command.emit(serv, nick, dest, msg,
                 include_context=True, limit_context=[cmd])
             continue
