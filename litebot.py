@@ -99,14 +99,14 @@ while True:
         if msg=="%":
             about("about", serv, nick, dest, msg)
             continue
-        
+
         if msg and msg.startswith("%"):
             msg = msg[1:]
             msg = msg.strip()
             chop = msg.find(" ")
             if chop != -1:
-                cmd = msg[chop:]
-                msg = msg[:chop+1]
+                cmd = msg[:chop]
+                msg = msg[chop+1:]
             else:
                 cmd = msg
                 msg = ""
