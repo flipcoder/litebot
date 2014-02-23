@@ -1,0 +1,16 @@
+import os
+
+HOST = "irc.example.net"
+PORT = 6667
+NICK = "litebot"
+IDENT = "litebot"
+REALNAME = "litebot"
+CHAN = "#example"
+PASS = ""
+#QUOTE_PATH = os.path.expanduser("~") + "%s.log" % chan
+#LOG_PATH = os.path.expanduser("~") + "%s.log" % chan
+PLUGINS = [
+    "say",
+    "quote"
+]
+
