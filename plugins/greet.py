@@ -46,26 +46,28 @@ def response_event(ctx, serv, nick, dest, msg):
         if msg == w:
             serv.send("PRIVMSG %s :%s\n" % (
                 dest, random.choice(greeting_words)))
-            break
+            return True
+        elif w in msg and NICK in msg:
+            serv.send("PRIVMSG %s :%s %s\n" % (
+                dest, random.choice(greeting_words), nick))
+            return True
     
     for w in leaving_words:
         if msg == w or msg.startswith(w+" ") or msg.endswith(" "+w):
             serv.send("PRIVMSG %s :%s\n" % (
                 dest, random.choice(leaving_words)))
-            break
+            return True
         
     for w in laughing_words:
         if msg == w or msg.startswith(w+" ") or msg.endswith(" "+w):
             if random.random() > 0.75:
                 serv.send("PRIVMSG %s :%s\n" % (
                     dest, random.choice(laughing_words)))
-                break
+            return True
 
     if NICK in msg:
-        #if msg.endswith("?"):
-        #    serv.send("PRIVMSG %s :%s\n" % (dest, random.choice(insults)))
-        #else:
         serv.send("PRIVMSG %s :%s\n" % (dest, random.choice(reactions)))
+        return True
 
 serv.on_msg.connect(response_event, "greet")
 

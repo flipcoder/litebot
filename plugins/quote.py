@@ -1,7 +1,24 @@
 import operator
+import json
 
 quote_answer = ""
 quote_score = {}
+quote_score_file = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "plugins",
+    "quote_score.json"
+)
+try:
+    with open(quote_score_file) as f:
+        quote_score = json.loads(f.read())
+        print quote_score
+except:
+    pass
+
+def quote_save_score(cmd, serv):
+    with open(quote_score_file, "w") as f:
+        f.write(json.dumps(quote_score, sort_keys=True, indent=4))
+
 def quote(cmd, serv, nick, dest, msg):
     global quote_answer
 
@@ -59,8 +76,10 @@ def quote_event(ctx, serv, nick, dest, msg):
         quote_score[nick] = quote_score.get(nick, 0) + 1
         quote_answer = ""
         quote("quote", serv, nick, dest, msg)
+        return True # block other plugin invocations
 
 serv.on_command.connect(quote, "quote")
 serv.on_command.connect(quote_show_score, "score")
 serv.on_command.connect(quote_show_score, "points")
+serv.on_quit.connect(quote_save_score)
 

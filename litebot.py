@@ -25,13 +25,20 @@ class Signal:
         del self.slots[context]
     def emit(self, *args, **kwargs):
         limit_context = kwargs.get("limit_context", None)
+        brk = kwargs.get("allow_break", False)
+        include_context = kwargs.get("include_context", False)
         for ctx, funcs in self.slots.items():
             if not limit_context or ctx in limit_context:
                 for func in funcs:
-                    if kwargs.get("include_context", False):
-                        func(ctx, *args)
-                        continue
-                    func(*args)
+                    r = None
+                    if include_context:
+                        r = func(ctx, *args)
+                    else:
+                        r = func(*args)
+                    if brk and r:
+                        return
+                    continue
+
 
 class Server:
     def __init__(self, sock):
@@ -86,10 +93,11 @@ try:
                 sock.send("JOIN %s\n" % CHAN)
                 logged_in = True
                 print "signed in"
-                serv.on_enter.emit(serv, include_context=True)
+                serv.on_enter.emit(serv,
+                    include_context=True, allow_break=True)
             continue
         
-        serv.on_data.emit(serv, buf, include_context=True)
+        serv.on_data.emit(serv, buf, include_context=True, allow_break=True)
         
         if buf.find("PRIVMSG") != -1:
             #print buf.strip()
@@ -100,9 +108,10 @@ try:
             msg = ":".join(buf[3:])[:-2]
             dest = buf[2].split()[2]
             
-            serv.on_msg.emit(serv, nick, dest, msg, include_context=True)
+            serv.on_msg.emit(serv, nick, dest, msg,
+                include_context=True, allow_break=True)
             
-            if msg=="%":
+            if msg=="%" or msg=="%help":
                 about("about", serv, nick, dest, msg)
                 continue
 
@@ -117,7 +126,8 @@ try:
                     cmd = msg
                     msg = ""
                 serv.on_command.emit(serv, nick, dest, msg,
-                    include_context=True, limit_context=[cmd])
+                    include_context=True, limit_context=[cmd], allow_break=True
+                )
                 continue
 except:
     serv.on_quit.emit(serv, include_context=True)
