@@ -39,6 +39,8 @@ class Server:
         self.on_msg = Signal()
         self.on_data = Signal()
         self.on_command = Signal()
+        self.on_enter = Signal()
+        self.on_quit = Signal()
     def send(self, msg):
         self.sock.send(msg)
 
@@ -72,49 +74,53 @@ logged_in = False
         
 print "%s running" % NICK
 
-while True:
-    
-    buf = sock.recv(4096)
-
-    serv.on_data.emit(serv, buf, include_context=True)
-    
-    if buf.find("PING") != -1:
-        sock.send("PONG %s\r\n" % buf.split()[1]+"\n")
-        if not logged_in:
-            sock.send("PRIVMSG nickserv identify %s\n" % PASS)
-            sock.send("JOIN %s\n" % CHAN)
-            logged_in = True
-            print "signed in"
-    elif buf.find("PRIVMSG") != -1:
-        #print buf.strip()
-        buf = buf.replace("!",":").split(":")
-        nick = buf[1]
-        if len(buf[3]) <= 2:
-            continue
-        msg = ":".join(buf[3:])[:-2]
-        dest = buf[2].split()[2]
+try:
+    while True:
         
-        serv.on_msg.emit(serv, nick, dest, msg, include_context=True)
+        buf = sock.recv(4096)
         
-        if msg=="%":
-            about("about", serv, nick, dest, msg)
+        if buf.find("PING") != -1:
+            sock.send("PONG %s\r\n" % buf.split()[1]+"\n")
+            if not logged_in:
+                sock.send("PRIVMSG nickserv identify %s\n" % PASS)
+                sock.send("JOIN %s\n" % CHAN)
+                logged_in = True
+                print "signed in"
+                serv.on_enter.emit(serv, include_context=True)
             continue
+        
+        serv.on_data.emit(serv, buf, include_context=True)
+        
+        if buf.find("PRIVMSG") != -1:
+            #print buf.strip()
+            buf = buf.replace("!",":").split(":")
+            nick = buf[1]
+            if len(buf[3]) <= 2:
+                continue
+            msg = ":".join(buf[3:])[:-2]
+            dest = buf[2].split()[2]
+            
+            serv.on_msg.emit(serv, nick, dest, msg, include_context=True)
+            
+            if msg=="%":
+                about("about", serv, nick, dest, msg)
+                continue
 
-        if msg and msg.startswith("%"):
-            msg = msg[1:]
-            msg = msg.strip()
-            chop = msg.find(" ")
-            if chop != -1:
-                cmd = msg[:chop]
-                msg = msg[chop+1:]
-            else:
-                cmd = msg
-                msg = ""
-            serv.on_command.emit(serv, nick, dest, msg,
-                include_context=True, limit_context=[cmd])
-            continue
-
-#except:
-#    print "bye"
-    #s.send("PRIVMSG %s :bye" % CHAN)
+            if msg and msg.startswith("%"):
+                msg = msg[1:]
+                msg = msg.strip()
+                chop = msg.find(" ")
+                if chop != -1:
+                    cmd = msg[:chop]
+                    msg = msg[chop+1:]
+                else:
+                    cmd = msg
+                    msg = ""
+                serv.on_command.emit(serv, nick, dest, msg,
+                    include_context=True, limit_context=[cmd])
+                continue
+except:
+    serv.on_quit.emit(serv, include_context=True)
+    print "bye"
+    raise
 

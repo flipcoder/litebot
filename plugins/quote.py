@@ -44,7 +44,7 @@ def quote(cmd, serv, nick, dest, msg):
 def quote_show_score(ctx, serv, nick, dest, msg):
     #if msg == "quote":
     output = []
-    sorted_score = sorted(quote_score.iteritems(), key=operator.itemgetter(1))
+    sorted_score = sorted(quote_score.iteritems(), key=operator.itemgetter(1), reverse=True)
     for tup in sorted_score:
         output += ["%s: %s" % tup]
     if len(output) > 5:
