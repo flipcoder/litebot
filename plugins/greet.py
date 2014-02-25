@@ -1,8 +1,8 @@
 import random
 
 greeting_words = [
-    "hi","hey","hello","yo","yoyo","greetings",
-    "howdy","sup","wasup"
+    "hi","hey","hello","yo","yoyo","greetings","hiya",
+    "howdy","sup","wasup","whatsup","whats up","what's up"
 ]
 leaving_words = [
     "bye","cya","seeya","later","bai"
@@ -41,17 +41,19 @@ reactions = [
 
 def response_event(ctx, serv, nick, dest, msg):
     msg = msg.lower()
+    msg = msg.replace("?", " ").replace("!", " ").replace(".", " ")
     
     for w in greeting_words:
         if msg == w:
             serv.send("PRIVMSG %s :%s\n" % (
                 dest, random.choice(greeting_words)))
             return True
-        elif w in msg and NICK in msg:
-            serv.send("PRIVMSG %s :%s %s\n" % (
-                dest, random.choice(greeting_words), nick))
-            return True
-    
+        elif msg.startswith(w) or msg.endswith(w):
+            if NICK in msg:
+                serv.send("PRIVMSG %s :%s %s\n" % (
+                    dest, random.choice(greeting_words), nick))
+                return True
+        
     for w in leaving_words:
         if msg == w or msg.startswith(w+" ") or msg.endswith(" "+w):
             serv.send("PRIVMSG %s :%s\n" % (
@@ -60,7 +62,7 @@ def response_event(ctx, serv, nick, dest, msg):
         
     for w in laughing_words:
         if msg == w or msg.startswith(w+" ") or msg.endswith(" "+w):
-            if random.random() > 0.75:
+            if random.random() > 0.50:
                 serv.send("PRIVMSG %s :%s\n" % (
                     dest, random.choice(laughing_words)))
             return True
