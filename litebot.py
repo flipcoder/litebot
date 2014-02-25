@@ -26,6 +26,7 @@ class Signal:
     def emit(self, *args, **kwargs):
         limit_context = kwargs.get("limit_context", None)
         brk = kwargs.get("allow_break", False)
+        force_brk = kwargs.get("force_break", False)
         include_context = kwargs.get("include_context", False)
         for ctx, funcs in self.slots.items():
             if not limit_context or ctx in limit_context:
@@ -36,6 +37,8 @@ class Signal:
                     else:
                         r = func(*args)
                     if brk and r:
+                        return
+                    if force_brk:
                         return
                     continue
 
@@ -126,7 +129,7 @@ try:
                     cmd = msg
                     msg = ""
                 serv.on_command.emit(serv, nick, dest, msg,
-                    include_context=True, limit_context=[cmd], allow_break=True
+                    include_context=True, limit_context=[cmd], force_break=True
                 )
                 continue
 except:
