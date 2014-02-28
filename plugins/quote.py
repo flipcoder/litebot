@@ -66,7 +66,7 @@ def quote_show_score(ctx, serv, nick, dest, msg):
         output += ["%s: %s" % tup]
     if len(output) > 5:
         output = output[:5] + ["..."]
-    sock.send("PRIVMSG %s :Score: %s\n" % (dest, " ,".join(output)))
+    sock.send("PRIVMSG %s :Score: %s\n" % (dest, ", ".join(output)))
 
 def quote_event(ctx, serv, nick, dest, msg):
     global quote_answer
