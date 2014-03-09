@@ -39,7 +39,7 @@ reactions = [
     "It's a thankless job, but I've got a lot of Karma to burn off."
 ]
 
-def response_event(ctx, serv, nick, dest, msg):
+def greet_msg(ctx, serv, nick, dest, msg):
     msg = msg.lower()
     msg = msg.replace("?", " ").replace("!", " ").replace(".", " ")
     
@@ -71,5 +71,9 @@ def response_event(ctx, serv, nick, dest, msg):
         serv.send("PRIVMSG %s :%s\n" % (dest, random.choice(reactions)))
         return True
 
-serv.on_msg.connect(response_event, "greet")
+def greet_quit(ctx, serv):
+    serv.send("PRIVMSG %s :%s\n" % (CHAN, random.choice(leaving_words)))
+    
+serv.on_msg.connect(greet_msg, "greet")
+serv.on_quit.connect(greet_quit, "greet")
 
