@@ -53,6 +53,8 @@ class Server:
         self.on_quit = Signal()
     def send(self, msg):
         self.sock.send(msg)
+    def say(self, dest, msg):
+        self.sock.send("PRIVMSG %s :%s\n" % (dest, msg))
 
 with open("config.py") as source:
     eval(compile(source.read(), "config.py", 'exec'))
