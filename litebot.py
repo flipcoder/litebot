@@ -54,7 +54,13 @@ class Server:
     def send(self, msg):
         self.sock.send(msg)
     def say(self, dest, msg):
+        if type(dest) == type([]):
+            for chan in dest:
+                self.sock.send("PRIVMSG %s :%s\n" % (chan, msg))
+            return
         self.sock.send("PRIVMSG %s :%s\n" % (dest, msg))
+    def broadcast(self, msg):
+        self.say(CHANS, msg)
 
 with open("config.py") as source:
     eval(compile(source.read(), "config.py", 'exec'))
@@ -137,6 +143,5 @@ try:
                 continue
 except:
     serv.on_quit.emit(serv, include_context=True)
-    print "bye"
     raise
 
