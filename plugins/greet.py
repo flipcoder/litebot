@@ -5,7 +5,7 @@ greeting_words = [
     "howdy","sup","wasup","whatsup","whats up","what's up"
 ]
 leaving_words = [
-    "bye","cya","seeya","later","bai"
+    "bye","cya","seeya","later","bai","im out"
 ]
 laughing_words = [
     "lol","lolz","hehe","haha","i don't get it","rofl",
@@ -45,34 +45,31 @@ def greet_msg(ctx, serv, nick, dest, msg):
     
     for w in greeting_words:
         if msg == w:
-            serv.send("PRIVMSG %s :%s\n" % (
-                dest, random.choice(greeting_words)))
+            serv.say(dest, random.choice(greeting_words))
             return True
         elif msg.startswith(w) or msg.endswith(w):
             if NICK in msg:
-                serv.send("PRIVMSG %s :%s %s\n" % (
-                    dest, random.choice(greeting_words), nick))
+                serv.say(dest, nick+": "+random.choice(greeting_words))
                 return True
         
     for w in leaving_words:
         if msg == w or msg.startswith(w+" ") or msg.endswith(" "+w):
-            serv.send("PRIVMSG %s :%s\n" % (
-                dest, random.choice(leaving_words)))
+            serv.say(dest, random.choice(leaving_words))
             return True
         
     for w in laughing_words:
         if msg == w or msg.startswith(w+" ") or msg.endswith(" "+w):
             if random.random() > 0.50:
-                serv.send("PRIVMSG %s :%s\n" % (
-                    dest, random.choice(laughing_words)))
+                serv.say(dest, random.choice(laughing_words))
             return True
 
     if NICK in msg:
-        serv.send("PRIVMSG %s :%s\n" % (dest, random.choice(reactions)))
+        serv.say(dest, random.choice(reactions))
         return True
 
 def greet_quit(ctx, serv):
-    serv.send("PRIVMSG %s :%s\n" % (CHAN, random.choice(leaving_words)))
+    for chan in CHANS:
+        serv.say(chan, random.choice(leaving_words))
     
 serv.on_msg.connect(greet_msg, "greet")
 serv.on_quit.connect(greet_quit, "greet")

@@ -95,7 +95,8 @@ try:
             sock.send("PONG %s\r\n" % buf.split()[1]+"\n")
             if not logged_in:
                 sock.send("PRIVMSG nickserv identify %s\n" % PASS)
-                sock.send("JOIN %s\n" % CHAN)
+                for chan in CHANS:
+                    sock.send("JOIN %s\n" % chan)
                 logged_in = True
                 print "signed in"
                 serv.on_enter.emit(serv,
