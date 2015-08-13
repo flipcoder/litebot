@@ -57,11 +57,11 @@ def greet_msg(ctx, serv, nick, dest, msg):
             serv.say(dest, random.choice(leaving_words))
             return True
         
-    for w in laughing_words:
-        if msg == w or msg.startswith(w+" ") or msg.endswith(" "+w):
-            if random.random() > 0.50:
-                serv.say(dest, random.choice(laughing_words))
-            return True
+    #for w in laughing_words:
+    #    if msg == w or msg.startswith(w+" ") or msg.endswith(" "+w):
+    #        if random.random() > 0.50:
+    #            serv.say(dest, random.choice(laughing_words))
+    #        return True
 
     if NICK in msg:
         serv.say(dest, random.choice(reactions))

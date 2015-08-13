@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 
+import os
 import sys
 import socket
 import urllib
@@ -62,7 +63,11 @@ class Server:
     def broadcast(self, msg):
         self.say(CHANS, msg)
 
-with open("config.py") as source:
+config_path = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "config.py"
+)
+with open(config_path) as source:
     eval(compile(source.read(), "config.py", 'exec'))
 
 buf = ""
@@ -73,9 +78,13 @@ sock.connect((HOST, PORT))
 sock.send("NICK %s\n" % NICK)
 sock.send("USER %s %s %s :%s\n" % (IDENT, NICK, HOST, REALNAME))
 
+plugins = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "plugins"
+)
 for cmd in PLUGINS:
     print "loading %s plugin..." % cmd
-    with open("plugins/%s.py" % cmd) as source:
+    with open(os.path.join(plugins,cmd+".py")) as source:
         eval(compile(source.read(), "%s.py" % cmd, 'exec'))
     
 #try:
