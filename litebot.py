@@ -52,14 +52,25 @@ class Server:
         self.on_command = Signal()
         self.on_enter = Signal()
         self.on_quit = Signal()
+        self.test = not sock
+        
     def send(self, msg):
-        self.sock.send(msg)
+        if self.test:
+            print msg
+        else:
+            self.sock.send(msg)
     def say(self, dest, msg):
         if type(dest) == type([]):
-            for chan in dest:
-                self.sock.send("PRIVMSG %s :%s\n" % (chan, msg))
+            if TEST:
+                print "(all) %s" % (dest,msg)
+            else:
+                for chan in dest:
+                    self.sock.send("PRIVMSG %s :%s\n" % (chan, msg))
             return
-        self.sock.send("PRIVMSG %s :%s\n" % (dest, msg))
+        if TEST:
+            print "(%s) %s" % (dest,msg)
+        else:
+            self.sock.send("PRIVMSG %s :%s\n" % (dest, msg))
     def broadcast(self, msg):
         self.say(CHANS, msg)
 
@@ -72,11 +83,16 @@ with open(config_path) as source:
 
 buf = ""
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+TEST = "--test" in sys.argv[1:]
+
+sock = None
+if not TEST:
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 serv = Server(sock)
-sock.connect((HOST, PORT))
-sock.send("NICK %s\n" % NICK)
-sock.send("USER %s %s %s :%s\n" % (IDENT, NICK, HOST, REALNAME))
+if not TEST:
+    sock.connect((HOST, PORT))
+    sock.send("NICK %s\n" % NICK)
+    sock.send("USER %s %s %s :%s\n" % (IDENT, NICK, HOST, REALNAME))
 
 plugins = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
@@ -97,40 +113,51 @@ def about(cmd, serv, nick, dest, msg):
     serv.send("PRIVMSG %s :I am litebot (github.com/flipcoder/litebot)\n" % dest)
     serv.send("PRIVMSG %s :Commands (prefix with %%): %s\n" % (dest, ", ".join(sorted(serv.on_command.slots))))
 
-logged_in = False
+logged_in = False or TEST
         
 print "%s running" % NICK
+
+if TEST:
+    print 'Test mode on %s.' % CHANS[0]
 
 try:
     while True:
         
-        buf = sock.recv(4096)
-        
-        if buf.find("PING") != -1:
-            sock.send("PONG %s\r\n" % buf.split()[1]+"\n")
-            if not logged_in:
-                sock.send("PRIVMSG nickserv identify %s\n" % PASS)
-                for chan in CHANS:
-                    sock.send("JOIN %s\n" % chan)
-                logged_in = True
-                print "signed in"
-                serv.on_enter.emit(serv,
-                    include_context=True, allow_break=True)
-            continue
-        
-        serv.on_data.emit(serv, buf, include_context=True, allow_break=True)
-        
-        if buf.find("PRIVMSG") != -1:
-            #print buf.strip()
-            buf = buf.replace("!",":").split(":")
-            nick = buf[1]
-            if len(buf[3]) <= 2:
-                continue
-            msg = ":".join(buf[3:])[:-2]
-            dest = buf[2].split()[2]
+        if not TEST:
             
-            serv.on_msg.emit(serv, nick, dest, msg,
-                include_context=True, allow_break=True)
+            buf = sock.recv(4096)
+            
+            if buf.find("PING") != -1:
+                sock.send("PONG %s\r\n" % buf.split()[1]+"\n")
+                if not logged_in:
+                    sock.send("PRIVMSG nickserv identify %s\n" % PASS)
+                    for chan in CHANS:
+                        sock.send("JOIN %s\n" % chan)
+                    logged_in = True
+                    print "signed in"
+                    serv.on_enter.emit(serv,
+                        include_context=True, allow_break=True)
+                continue
+            
+            serv.on_data.emit(serv, buf, include_context=True, allow_break=True)
+        
+        if buf.find("PRIVMSG") != -1 or TEST:
+            if not TEST:
+                buf = buf.replace("!",":").split(":")
+                nick = buf[1]
+                if len(buf[3]) <= 2:
+                    continue
+                msg = ":".join(buf[3:])[:-2]
+                dest = buf[2].split()[2]
+            
+            if TEST:
+                nick = 'user'
+                dest = CHANS[0]
+                msg = raw_input('> ')
+            
+            if not TEST or msg:
+                serv.on_msg.emit(serv, nick, dest, msg,
+                    include_context=True, allow_break=True)
             
             if msg=="%" or msg=="%help":
                 about("about", serv, nick, dest, msg)
