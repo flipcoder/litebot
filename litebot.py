@@ -83,7 +83,7 @@ with open(config_path) as source:
 
 buf = ""
 
-TEST = "--test" in sys.argv[1:]
+TEST = set(["-t","--test"]) & set(sys.argv[1:])
 
 sock = None
 if not TEST:
