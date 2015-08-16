@@ -62,7 +62,7 @@ class Server:
     def say(self, dest, msg):
         if type(dest) == type([]):
             if TEST:
-                print "(all) %s" % (dest,msg)
+                print "(all) %s" % msg
             else:
                 for chan in dest:
                     self.sock.send("PRIVMSG %s :%s\n" % (chan, msg))
