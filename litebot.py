@@ -62,7 +62,7 @@ class Server:
     def say(self, dest, msg):
         if type(dest) == type([]):
             if TEST:
-                print "(all) %s" % (dest,msg)
+                print "(all) %s" % msg
             else:
                 for chan in dest:
                     self.sock.send("PRIVMSG %s :%s\n" % (chan, msg))
@@ -83,8 +83,7 @@ with open(config_path) as source:
 
 buf = ""
 
-args = sys.argv[1:]
-TEST = "-t" in args or "--test" in args
+TEST = bool(set(["-t","--test"]) & set(sys.argv[1:]))
 
 sock = None
 if not TEST:
