@@ -1,4 +1,5 @@
 #!/usr/bin/env python2
+
 from collections import OrderedDict
 import json
 import copy
@@ -17,6 +18,7 @@ cards_file = os.path.join(
    "plugins",
    "cards.json"
 )
+WILD_RATE = 0.02
 
 with open(cards_file) as f:
     CARDS = json.loads(f.read())
@@ -45,17 +47,22 @@ class Player:
         for r in range(count):
             while True:
                 r = self.game.random_alg('white')
-                if r not in self.hand:
+                if r == 'WILDCARD' or r not in self.hand:
                     break
             self.hand += [r]
 
 class Game:
     
-    def random_balanced_sets(self, deck):
+    def random_balanced_sets(self, deck, wild=True):
+
         i = 0
         max_retries = 10
         if deck not in self.history:
             self.history[deck] = []
+
+        if wild and deck=='white' and random.random() < WILD_RATE:
+            return "WILDCARD"
+        
         while True:
             set_id = random.randint(0,len(self.cards[deck].keys())-1)
             set_name = tuple(self.cards[deck].keys())[set_id]
@@ -65,6 +72,7 @@ class Game:
                 self.history[deck] += [card]
                 break
             i += 1
+        
         return card
     
     def __init__(self):
@@ -123,10 +131,11 @@ class Game:
             for p in self.players.values():
                 p.hand = filter(lambda card: card, p.hand)
             
+                # have cpus randomly pick an answer now, instead of maintaining a hand
                 if p.cpu:
                     p.hand = []
                     for x in xrange(self.black_blanks):
-                        p.selection += [self.random_alg('white')]
+                        p.selection += [self.random_alg('white', wild=False)]
             
             self.rid = copy.copy([p for p in self.players.keys() if p != self.czar])
             random.shuffle(self.rid)
@@ -142,14 +151,17 @@ class Game:
         if self.stage == Stage.players:
             if nick in self.players.keys() and nick != self.czar:
                 p = self.players[nick]
-                if len(p.selection) < self.black_blanks:
+                
+                if p.selection and p.selection[-1] == "WILDCARD":
+                    p.selection[-1] = msg
+                    if len(p.selection) == self.black_blanks:
+                        self.poll()
+                    else:
+                        serv.say(p.name, 'Pick next card (#%s): ' % (len(p.selection)+1))
+                elif len(p.selection) < self.black_blanks:
+                    pick = None
                     try:
                         pick = p.hand[int(msg)-1]
-                        if not pick:
-                            serv.say(nick, 'You already picked that card. Pick a different one.')
-                            return
-                        p.selection += [pick]
-                        p.hand[int(msg)-1] = ""
                     except ValueError, e:
                         return
                     except IndexError, e:
@@ -157,7 +169,15 @@ class Game:
                     except:
                         return
                     
-                    if len(p.selection) == self.black_blanks:
+                    if not pick: # previously picked cards are blanked
+                        serv.say(nick, 'You already picked that card. Pick a different one.')
+                        return
+                    p.selection += [pick]
+                    p.hand[int(msg)-1] = "" # blank cards to avoid repick and preserve offsets
+                    
+                    if p.selection and p.selection[-1] == "WILDCARD":
+                        serv.say(p.name, "You have chosen wildcard. Enter card text:")
+                    elif len(p.selection) == self.black_blanks:
                         self.poll()
                     else:
                         serv.say(p.name, 'Pick next card (#%s): ' % (len(p.selection)+1))
@@ -223,12 +243,12 @@ class Game:
             p.fill()
             if p.name != self.czar:
                 hand = ""
+                serv.say(p.name, self.black)
                 for r in range(len(p.hand)):
                     hand += '(%s) %s ' % (r+1, p.hand[r])
                 multi = ' (one at a time)' if self.black_blanks>1 else ''
-                serv.say(p.name, self.black)
                 serv.say(p.name, hand)
-                serv.say(p.name, 'Pick a card%s: ' % multi)
+                serv.say(p.name, 'Pick card%s: ' % multi)
             else:
                 serv.say(p.name, "You're now czar.  Wait until other players have selected cards.")
         
@@ -247,10 +267,10 @@ class Game:
         if not self.inited or self.stage != Stage.setup:
             return
         
-        #if msg and nick in GODS:
-        #    self.players[msg] = Player(msg)
-        #else:
-        self.players[nick] = Player(nick, self)
+        if TEST and msg:
+            self.players[msg] = Player(msg, self)
+        else:
+            self.players[nick] = Player(nick, self)
         
         for chan in CHANS:
             serv.broadcast(JOIN_MSG % ', '.join(self.players))
