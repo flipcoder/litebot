@@ -6,6 +6,7 @@ import socket
 import urllib
 import string
 import random
+import traceback
 
 class Signal:
     def __init__(self):
@@ -98,11 +99,16 @@ plugins = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
     "plugins"
 )
-for cmd in PLUGINS:
-    print "loading %s plugin..." % cmd
-    with open(os.path.join(plugins,cmd+".py")) as source:
-        eval(compile(source.read(), "%s.py" % cmd, 'exec'))
-    
+
+for p in PLUGINS:
+    print "loading %s plugin..." % p
+    try:
+        with open(os.path.join(plugins, p+".py")) as source:
+            eval(compile(source.read(), "%s.py" % p, 'exec'))
+    except Exception:
+        print >>sys.stderr, "Exception in plugin \"%s\":" % p
+        print >>sys.stderr, traceback.format_exc()
+
 #try:
 #    with open("plugins/__init__.py") as source:
 #        eval(compile(source.read(), "plugins.py", 'exec'))
@@ -114,7 +120,7 @@ def about(cmd, serv, nick, dest, msg):
     serv.send("PRIVMSG %s :Commands (prefix with %%): %s\n" % (dest, ", ".join(sorted(serv.on_command.slots))))
 
 logged_in = False or TEST
-        
+
 print "%s running" % NICK
 
 if TEST:
