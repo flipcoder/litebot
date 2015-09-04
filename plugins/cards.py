@@ -35,7 +35,6 @@ class Player:
         self.hand = []
         self.selection = []
         self.cpu = kwargs.get('cpu', False)
-        self.starter = kwargs.get('starter', False)
         self.game = game
     
     def __str__(self):
@@ -279,6 +278,6 @@ class Game:
 
 g = Game()
 serv.on_command.connect(g.init, "cards")
-serv.on_command.connect(g.join, "join")
-serv.on_command.connect(g.go, "go")
+serv.on_command.connect(g.join, "join", hidden=True)
+serv.on_command.connect(g.go, "go", hidden=True)
 

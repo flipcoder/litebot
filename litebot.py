@@ -11,13 +11,18 @@ import traceback
 class Signal:
     def __init__(self):
         self.slots = {}
+        self.meta = {}
     def ensure(self, func, context=""):
         if context not in self.slots:
             self.connect(func, context)
             return
         if func not in self.slots[context]:
             self.connect(func, context)
-    def connect(self, func, context=""):
+    def connect(self, func, context="", hidden=False):
+        if context:
+            self.meta[context] = {
+                'hidden':  hidden
+            }
         if context not in self.slots:
             self.slots[context] = []
         self.slots[context] += [func]
@@ -77,9 +82,11 @@ class Server:
     def broadcast(self, msg):
         self.say(CHANS, msg)
 
-    def about(self, cmd, nick, dest, msg):
-        self.say("I am litebot (github.com/flipcoder/litebot)" % dest)
-        self.say("Commands (prefix with %%): %s" % (dest, ", ".join(sorted(self.on_command.slots))))
+    def about(self, cmd, nick, dest, msg, plugins):
+        self.say(dest, "I am litebot (github.com/flipcoder/litebot)")
+        cmds = filter(lambda x: not self.on_command.meta[x]['hidden'], sorted(self.on_command.slots))
+        self.say(dest, "Plugins: %s" % (", ".join(plugins)))
+        self.say(dest, "Commands (prefix with %%): %s" % (", ".join(cmds)))
 
 TEST = bool(set(["-t","--test"]) & set(sys.argv[1:]))
 
@@ -108,24 +115,19 @@ if __name__=='__main__':
         sock.send("NICK %s\n" % NICK)
         sock.send("USER %s %s %s :%s\n" % (IDENT, NICK, HOST, REALNAME))
 
-    plugins = os.path.join(
+    plugins_fn = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         "plugins"
     )
 
-    for p in PLUGINS:
+    for p in PLUGINS[:]:
         try:
-            with open(os.path.join(plugins, p+".py")) as source:
+            with open(os.path.join(plugins_fn, p+".py")) as source:
                 eval(compile(source.read(), "%s.py" % p, 'exec'))
         except Exception:
             print >>sys.stderr, "Exception in plugin \"%s\":" % p
             print >>sys.stderr, traceback.format_exc()
-
-    #try:
-    #    with open("plugins/__init__.py") as source:
-    #        eval(compile(source.read(), "plugins.py", 'exec'))
-    #except:
-    #    sys.exit(1)
+            PLUGINS.remove(p)
 
     logged_in = False or TEST
     test_nick = 'user'
@@ -178,7 +180,7 @@ if __name__=='__main__':
                         continue
                     
                 if msg=="%" or msg=="%help":
-                    serv.about("about", nick, dest, msg)
+                    serv.about("about", nick, dest, msg, PLUGINS)
                     continue
 
                 if msg and msg.startswith("%"):
