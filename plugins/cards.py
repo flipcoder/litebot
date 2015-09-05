@@ -132,7 +132,7 @@ class Game:
             
                 # have cpus randomly pick an answer now, instead of maintaining a hand
                 if p.cpu:
-                    p.hand = []
+                    p.selection = []
                     for x in xrange(self.black_blanks):
                         p.selection += [self.random_alg('white', wild=False)]
             
