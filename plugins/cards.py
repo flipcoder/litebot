@@ -18,7 +18,7 @@ cards_file = os.path.join(
    "plugins",
    "cards.json"
 )
-WILD_RATE = 0.02
+WILD_RATE = 0.04
 
 with open(cards_file) as f:
     CARDS = json.loads(f.read())
