@@ -49,7 +49,6 @@ class Signal:
                         return
                     continue
 
-
 class Server:
     def __init__(self, sock):
         self.sock = sock
@@ -178,6 +177,8 @@ if __name__=='__main__':
                     if msg.startswith("/n ") or msg.startswith("/nick "):
                         test_nick = msg[msg.index(" ")+1:]
                         continue
+                    elif msg.startswith("/n"):
+                        test_nick = 'user'
                     
                 if msg=="%" or msg=="%help":
                     serv.about("about", nick, dest, msg, PLUGINS)

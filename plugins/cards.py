@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 
-from collections import OrderedDict
+import os
 import json
 import copy
 import random
@@ -18,7 +18,7 @@ cards_file = os.path.join(
    "plugins",
    "cards.json"
 )
-WILD_RATE = 0.04
+WILD_RATE = 0.08
 
 with open(cards_file) as f:
     CARDS = json.loads(f.read())
@@ -36,6 +36,7 @@ class Player:
         self.selection = []
         self.cpu = kwargs.get('cpu', False)
         self.game = game
+        self.fill()
     
     def __str__(self):
         return self.name
@@ -49,6 +50,14 @@ class Player:
                 if r == 'WILDCARD' or r not in self.hand:
                     break
             self.hand += [r]
+
+    def show_hand(self, game):
+        hand = ""
+        for r in range(len(self.hand)):
+            hand += '(%s) %s ' % (r+1, self.hand[r])
+        multi = ' (one at a time)' if game.black_blanks>1 else ''
+        serv.say(self.name, hand)
+        serv.say(self.name, 'Pick card%s: ' % multi)
 
 class Game:
     
@@ -84,7 +93,7 @@ class Game:
         self.players = {}
         self.host = None
         self.inited = False
-        self.turn = -1 # who is czar?
+        #turn = -1 # who is czar?
         self.black = "" # current black card text
         self.black_blanks = 1
         self.czar = ""
@@ -123,8 +132,11 @@ class Game:
         
         if self.stage == Stage.players:
             for p in self.players.values():
-                if not p.cpu and p.name != self.czar and len(p.selection) < self.black_blanks:
-                    return # someone not ready
+                if not p.cpu and p.name != self.czar:
+                    if len(p.selection) < self.black_blanks:
+                        return # someone not ready
+                    elif p.selection and p.selection[-1]=="WILDCARD":
+                        return # someone not ready
             
             # remove all the blank placeholder cards used to prevent IDs from changing during multiselection
             for p in self.players.values():
@@ -196,13 +208,13 @@ class Game:
                     serv.broadcast("%s gains 1 point with: %s" % (p.name, ', '.join(p.selection)))
                 else:
                     serv.broadcast("Beaten by a robot. Humanity must suffer the consequences.")
-                    if random.randint(0,1):
-                        self.players[self.czar].score -= 1
-                        serv.broadcast("%s was attacked by a robot (-1 point)." % self.czar)
-                    else:
-                        random_player = random.choice(filter(lambda p: not p.cpu, self.players.values()))
-                        random_player.score -= 1
-                        serv.broadcast("%s was attacked by a robot (-1 point)." % random_player.name)
+                    #if random.randint(0,1):
+                    #    self.players[self.czar].score -= 1
+                    #    serv.broadcast("%s was attacked by a robot (-1 point)." % self.czar)
+                    #else:
+                    #    random_player = random.choice(filter(lambda p: not p.cpu, self.players.values()))
+                    #    random_player.score -= 1
+                    #    serv.broadcast("%s was attacked by a robot (-1 point)." % random_player.name)
                 
                 self.next_round()
 
@@ -214,21 +226,37 @@ class Game:
                 self.reset()
             elif msg == "score":
                 self.scores()
+            elif msg.startswith("kick "):
+                user = msg[msg.index(" ")+1:]
+                if self.czar == user:
+                    next_turn()
+                if user in self.players:
+                    p = self.players[user]
+                    serv.broadcast("Kicked %s (score: %s) " % (p.name,p.score))
+                    del self.players[user]
         else:
             if not msg:
                 self.restart()
 
+    def next_turn(self):
+        while True:
+            if self.czar == '':
+                # first turn
+                self.czar = self.host.name
+            else:
+                turn = list(self.players.keys()).index(self.czar)
+                turn += 1
+                if turn >= len(self.players):
+                    turn = 0
+                self.czar = self.players.items()[turn][0]
+                print self.czar
+                if not self.players[self.czar].cpu:
+                    # cpu players are never czars
+                    return
+        
     def next_round(self):
         
-        # start round
-        while True:
-            self.turn = self.turn + 1
-            if self.turn >= len(self.players):
-                self.turn = 0
-            self.czar = self.players.items()[self.turn][0]
-            if not self.players[self.czar].cpu:
-                # cpu players are never czars
-                break
+        self.next_turn()
 
         # random pick black card
         serv.broadcast('%s is now card czar.' % self.czar)
@@ -241,13 +269,8 @@ class Game:
             p.selection = []
             p.fill()
             if p.name != self.czar:
-                hand = ""
                 serv.say(p.name, self.black)
-                for r in range(len(p.hand)):
-                    hand += '(%s) %s ' % (r+1, p.hand[r])
-                multi = ' (one at a time)' if self.black_blanks>1 else ''
-                serv.say(p.name, hand)
-                serv.say(p.name, 'Pick card%s: ' % multi)
+                p.show_hand(self)
             else:
                 serv.say(p.name, "You're now czar.  Wait until other players have selected cards.")
         
@@ -263,7 +286,7 @@ class Game:
 
     def join(self, cmd, serv, nick, dest, msg):
 
-        if not self.inited or self.stage != Stage.setup:
+        if not self.inited:
             return
         
         if TEST and msg:
@@ -271,10 +294,14 @@ class Game:
         else:
             self.players[nick] = Player(nick, self)
         
-        for chan in CHANS:
-            serv.broadcast(JOIN_MSG % ', '.join(self.players))
-            if len(self.players) >= MIN_PLAYERS:
-                serv.broadcast('When all players ready, %s must type %%go.' % self.host.name)
+        if self.stage == Stage.setup:
+            for chan in CHANS: 
+                serv.broadcast(JOIN_MSG % ', '.join(self.players))
+                if len(self.players) >= MIN_PLAYERS:
+                    serv.broadcast('When all players ready, %s must type %%go.' % self.host.name)
+        elif self.stage == Stage.players:
+            serv.say(nick, self.black)
+            self.players[nick].show_hand(self)
 
 g = Game()
 serv.on_command.connect(g.init, "cards")
