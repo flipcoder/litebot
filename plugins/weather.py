@@ -6,7 +6,15 @@ def w(cmd, serv, nick, dest, msg):
     except:
         return
     try:
-        msg = subprocess.check_output(['/usr/bin/python2','plugins/cliweather/cliweather', str(msg)])
+        plugins_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "plugins"
+        )
+        msg = subprocess.check_output([
+            '/usr/bin/python2',
+            os.path.join(plugins_path, 'cliweather/cliweather'),
+            str(msg)
+        ])
     except:
         return
     lines = msg.split('\n')
