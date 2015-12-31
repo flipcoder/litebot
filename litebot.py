@@ -7,6 +7,7 @@ import urllib
 import string
 import random
 import traceback
+import time
 
 class Signal:
     def __init__(self):
@@ -87,6 +88,23 @@ class Server:
         self.say(dest, "Plugins: %s" % (", ".join(plugins)))
         self.say(dest, "Commands (prefix with %%): %s" % (", ".join(cmds)))
 
+def handle_error(serv, e, errors, GODS=[], ERROR_SPAM=100, logged_in=False):
+    try:
+        ec = errors[e]
+        if ec < ERROR_SPAM:
+            ec += 1
+        elif ec == ERROR_SPAM:
+            if logged_in:
+                for god in GODS:
+                    serv.say(god, "Bot is error spamming: " + e)
+    except KeyError:
+        print e
+        errors[e] = 1
+        if logged_in:
+            for god in GODS:
+                serv.say(god, e)
+
+
 TEST = bool(set(["-t","--test"]) & set(sys.argv[1:]))
 
 if __name__=='__main__':
@@ -94,6 +112,8 @@ if __name__=='__main__':
     import readline
     
     PLUGINS = None
+    RECONNECT = False
+    ERROR_SPAM = 100
 
     config_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
@@ -103,106 +123,113 @@ if __name__=='__main__':
     with open(config_path) as source:
         eval(compile(source.read(), config_path, 'exec'))
 
-    buf = ""
+    reconnect = RECONNECT
+    while reconnect:
+        reconnect = RECONNECT
+        errors = {}
+        buf = ""
 
-    sock = None
-    if not TEST:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    serv = Server(sock)
-    if not TEST:
-        sock.connect((HOST, PORT))
-        sock.send("NICK %s\n" % NICK)
-        sock.send("USER %s %s %s :%s\n" % (IDENT, NICK, HOST, REALNAME))
+        sock = None
+        if not TEST:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        serv = Server(sock)
+        if not TEST:
+            sock.connect((HOST, PORT))
+            sock.send("NICK %s\n" % NICK)
+            sock.send("USER %s %s %s :%s\n" % (IDENT, NICK, HOST, REALNAME))
 
-    plugins_fn = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        "plugins"
-    )
+        plugins_fn = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "plugins"
+        )
 
-    for p in PLUGINS[:]:
-        try:
-            with open(os.path.join(plugins_fn, p+".py")) as source:
-                eval(compile(source.read(), "%s.py" % p, 'exec'))
-        except Exception:
-            print >>sys.stderr, "Exception in plugin \"%s\":" % p
-            print >>sys.stderr, traceback.format_exc()
-            PLUGINS.remove(p)
+        for p in PLUGINS[:]:
+            try:
+                with open(os.path.join(plugins_fn, p+".py")) as source:
+                    eval(compile(source.read(), "%s.py" % p, 'exec'))
+            except Exception:
+                print >>sys.stderr, "Exception in plugin \"%s\":" % p
+                print >>sys.stderr, traceback.format_exc()
+                PLUGINS.remove(p)
 
-    logged_in = False or TEST
-    test_nick = 'user'
+        logged_in = False or TEST
+        test_nick = 'user'
 
-    #if TEST:
-    #    print 'Test mode on %s.' % CHANS[0]
+        #if TEST:
+        #    print 'Test mode on %s.' % CHANS[0]
 
-    try:
         while True:
-            
-            if not TEST:
+            try:
                 
-                buf = sock.recv(4096)
-                
-                if buf.find("PING") != -1:
-                    sock.send("PONG %s\r\n" % buf.split()[1]+"\n")
-                    if not logged_in:
-                        sock.send("PRIVMSG nickserv identify %s\n" % PASS)
-                        for chan in CHANS:
-                            sock.send("JOIN %s\n" % chan)
-                        logged_in = True
-                        #print "signed in"
-                        serv.on_enter.emit(serv,
-                            include_context=True, allow_break=True)
-                    continue
-                
-                serv.on_data.emit(serv, buf, include_context=True, allow_break=True)
-            
-            if buf.find("PRIVMSG") != -1 or TEST:
                 if not TEST:
-                    buf = buf.replace("!",":").split(":")
-                    nick = buf[1]
-                    if len(buf[3]) <= 2:
-                        continue
-                    msg = ":".join(buf[3:])[:-2]
-                    dest = buf[2].split()[2]
-                
-                if TEST:
-                    dest = CHANS[0]
-                    nick = test_nick
-                    msg = raw_input('%s> ' % test_nick)
-                
-                if not TEST or msg:
-                    serv.on_msg.emit(serv, nick, dest, msg,
-                        include_context=True, allow_break=True)
-                
-                if TEST:
-                    if msg.startswith("/n ") or msg.startswith("/nick "):
-                        test_nick = msg[msg.index(" ")+1:]
-                        continue
-                    elif msg.startswith("/n"):
-                        test_nick = 'user'
                     
-                if msg=="%" or msg=="%help":
-                    serv.about("about", nick, dest, msg, PLUGINS)
-                    continue
+                    buf = sock.recv(4096)
+                    
+                    if buf.find("PING") != -1:
+                        sock.send("PONG %s\r\n" % buf.split()[1]+"\n")
+                        if not logged_in:
+                            time.sleep(1)
+                            sock.send("PRIVMSG nickserv identify %s\n" % PASS)
+                            for chan in CHANS:
+                                sock.send("JOIN %s\n" % chan)
+                            logged_in = True
+                            #print "signed in"
+                            serv.on_enter.emit(serv,
+                                include_context=True, allow_break=True)
+                        continue
+                    
+                    serv.on_data.emit(serv, buf, include_context=True, allow_break=True)
+                
+                if buf.find("PRIVMSG") != -1 or TEST:
+                    if not TEST:
+                        buf = buf.replace("!",":").split(":")
+                        nick = buf[1]
+                        if len(buf[3]) <= 2:
+                            continue
+                        msg = ":".join(buf[3:])[:-2]
+                        dest = buf[2].split()[2]
+                    
+                    if TEST:
+                        dest = CHANS[0]
+                        nick = test_nick
+                        msg = raw_input('%s> ' % test_nick)
+                    
+                    if not TEST or msg:
+                        serv.on_msg.emit(serv, nick, dest, msg,
+                            include_context=True, allow_break=True)
+                    
+                    if TEST:
+                        if msg.startswith("/n ") or msg.startswith("/nick "):
+                            test_nick = msg[msg.index(" ")+1:]
+                            continue
+                        elif msg.startswith("/n"):
+                            test_nick = 'user'
+                        
+                    if msg=="%" or msg=="%help":
+                        serv.about("about", nick, dest, msg, PLUGINS)
+                        continue
 
-                if msg and msg.startswith("%"):
-                    msg = msg[1:]
-                    msg = msg.strip()
-                    chop = msg.find(" ")
-                    if chop != -1:
-                        cmd = msg[:chop]
-                        msg = msg[chop+1:]
-                    else:
-                        cmd = msg
-                        msg = ""
-                    serv.on_command.emit(serv, nick, dest, msg,
-                        include_context=True, limit_context=[cmd], force_break=True
-                    )
-                    continue
+                    if msg and msg.startswith("%"):
+                        
+                        msg = msg[1:]
+                        msg = msg.strip()
+                        chop = msg.find(" ")
+                        if chop != -1:
+                            cmd = msg[:chop]
+                            msg = msg[chop+1:]
+                        else:
+                            cmd = msg
+                            msg = ""
+                        serv.on_command.emit(serv, nick, dest, msg,
+                            include_context=True, limit_context=[cmd], force_break=True
+                        )
+                        continue
+                
+            
+            except EOFError:
+                serv.on_quit.emit(serv, include_context=True)
+                break # may reconnect depending on settings
 
-    except EOFError:
-        serv.on_quit.emit(serv, include_context=True)
-
-    #except:
-    #    serv.on_quit.emit(serv, include_context=True)
-    #    raise
+            except Exception, e:
+                handle_error(serv, e, errors, GODS, ERROR_SPAM, logged_in)
 
