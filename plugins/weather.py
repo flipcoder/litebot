@@ -1,8 +1,27 @@
-import subprocess
+import subprocess,json
+
+saved_names = {}
+weather_file = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+   "plugins",
+   "cards.json"
+)
+with open(weather_file) as f:
+    saved_names = json.loads(f.read())
+
+def weather_save(serv):
+    with open(weather_file, "w") as f:
+        f.write(json.dumps(saved_names, sort_keys=True, indent=4))
+
 
 def w(cmd, serv, nick, dest, msg):
     try:
-        msg = int(msg)
+        if msg:
+            msg = int(msg)
+            saved_names[nick] = msg
+            weather_save(serv)
+        else:
+            msg = int(saved_names[nick])
     except:
         return
     try:
