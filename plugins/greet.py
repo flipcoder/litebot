@@ -1,4 +1,4 @@
-import random
+import random,time
 
 greeting_words = [
     "hi","hey","hello","yo","yoyo","greetings","hiya",
@@ -39,22 +39,37 @@ reactions = [
     "It's a thankless job, but I've got a lot of Karma to burn off."
 ]
 
+last_greet = 0.0
+last_part = 0.0
+throttle = 5.0
+
 def greet_msg(ctx, serv, nick, dest, msg):
+    global last_greet
+    global last_part
     msg = msg.lower()
     msg = msg.replace("?", " ").replace("!", " ").replace(".", " ")
+    t = time.time()
     
     for w in greeting_words:
         if msg == w:
-            serv.say(dest, random.choice(greeting_words))
+            if t - last_greet > throttle:
+                last_greet = t
+                serv.say(dest, random.choice(greeting_words))
             return True
         elif msg.startswith(w) or msg.endswith(w):
             if NICK in msg:
+                if t - last_greet > throttle:
+                    last_greet = t
+                    serv.say(dest, random.choice(leaving_words))
                 serv.say(dest, nick+": "+random.choice(greeting_words))
+                last_greet = t
                 return True
         
     for w in leaving_words:
         if msg == w or msg.startswith(w+" ") or msg.endswith(" "+w):
-            serv.say(dest, random.choice(leaving_words))
+            if t - last_part > throttle:
+                last_part = t
+                serv.say(dest, random.choice(leaving_words))
             return True
         
     #for w in laughing_words:
