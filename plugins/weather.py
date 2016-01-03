@@ -4,7 +4,7 @@ saved_names = {}
 weather_file = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
    "plugins",
-   "cards.json"
+   "weather.json"
 )
 with open(weather_file) as f:
     saved_names = json.loads(f.read())
