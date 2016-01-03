@@ -1,4 +1,4 @@
-import subprocess,json
+import subprocess,json,traceback
 
 saved_names = {}
 weather_file = os.path.join(
@@ -6,13 +6,15 @@ weather_file = os.path.join(
    "plugins",
    "weather.json"
 )
-with open(weather_file) as f:
-    saved_names = json.loads(f.read())
+with open(weather_file, 'a+') as f:
+    try:
+        saved_names = json.loads(f.read())
+    except ValueError, e:
+        saved_names = {}
 
 def weather_save(serv):
-    with open(weather_file, "w") as f:
+    with open(weather_file, 'w') as f:
         f.write(json.dumps(saved_names, sort_keys=True, indent=4))
-
 
 def w(cmd, serv, nick, dest, msg):
     try:
@@ -22,7 +24,8 @@ def w(cmd, serv, nick, dest, msg):
             weather_save(serv)
         else:
             msg = int(saved_names[nick])
-    except:
+    except Exception, e:
+        print traceback.format_exc()
         return
     try:
         plugins_path = os.path.join(
@@ -34,7 +37,8 @@ def w(cmd, serv, nick, dest, msg):
             os.path.join(plugins_path, 'cliweather/cliweather'),
             str(msg)
         ])
-    except:
+    except Exception, e:
+        print traceback.format_exc()
         return
     lines = msg.split('\n')
     lines = filter(lambda x: x, lines)

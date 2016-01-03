@@ -226,10 +226,12 @@ if __name__=='__main__':
                         continue
                 
             
-            except EOFError:
+            except EOFError, e:
+                print e
                 serv.on_quit.emit(serv, include_context=True)
                 break # may reconnect depending on settings
 
             except Exception, e:
+                print e
                 handle_error(serv, e, errors, GODS, ERROR_SPAM, logged_in)
 
