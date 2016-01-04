@@ -182,12 +182,20 @@ if __name__=='__main__':
                 
                 if buf.find("PRIVMSG") != -1 or TEST:
                     if not TEST:
-                        buf = buf.replace("!",":").split(":")
-                        nick = buf[1]
-                        if len(buf[3]) <= 2:
+                        bang_idx = buf.find('!')
+                        if bang_idx == -1:
                             continue
-                        msg = ":".join(buf[3:])[:-2]
-                        dest = buf[2].split()[2]
+                        tokens = []
+                        print "buf: " + str(buf)
+                        tokens += [buf[1:bang_idx]]
+                        tokens += buf[bang_idx+1:].split(":")
+                        print 'tokens: ' + str(tokens)
+                        print str(buf)
+                        
+                        nick = tokens[0]
+                        dest = tokens[1].split()[2]
+                        msg = ':'.join(tokens[2:]).rstrip()
+                        print 'nick: %s, dest: %s, msg: %s' % (nick,dest,msg)
                     
                     if TEST:
                         dest = CHANS[0]

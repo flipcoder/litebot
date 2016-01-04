@@ -42,7 +42,7 @@ def w(cmd, serv, nick, dest, msg):
         return
     lines = msg.split('\n')
     lines = filter(lambda x: x, lines)
-    serv.broadcast(' | '.join(lines))
+    serv.say(dest, ' | '.join(lines))
 
 serv.on_command.connect(w, "w")
 
