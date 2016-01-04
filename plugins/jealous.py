@@ -4,7 +4,7 @@ last_t = 0
 
 def jealous(ctx, serv, nick, dest, msg):
     global last_t
-    if msg.startswith("!") and (msg+"a")[1:].isalpha():
+    if msg.startswith("!") and (msg+"a")[1:].isalnum():
         t = time.time()
         if t - last_t > throttle:
             last_t = t
