@@ -19,11 +19,10 @@ def weather_save(serv):
 def w(cmd, serv, nick, dest, msg):
     try:
         if msg:
-            msg = int(msg)
             saved_names[nick] = msg
             weather_save(serv)
         else:
-            msg = int(saved_names[nick])
+            msg = str(saved_names[nick])
     except Exception, e:
         print traceback.format_exc()
         return
@@ -35,7 +34,7 @@ def w(cmd, serv, nick, dest, msg):
         msg = subprocess.check_output([
             '/usr/bin/python2',
             os.path.join(plugins_path, 'cliweather/cliweather'),
-            str(msg)
+            msg
         ])
     except Exception, e:
         print traceback.format_exc()
