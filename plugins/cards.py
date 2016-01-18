@@ -226,14 +226,14 @@ class Game:
                 self.reset()
             elif msg == "score":
                 self.scores()
-            elif msg.startswith("kick "):
-                user = msg[msg.index(" ")+1:]
-                if self.czar == user:
-                    next_turn()
-                if user in self.players:
-                    p = self.players[user]
-                    serv.broadcast("Kicked %s (score: %s) " % (p.name,p.score))
-                    del self.players[user]
+            # elif msg.startswith("kick "):
+            #     user = msg[msg.index(" ")+1:]
+            #     if self.czar == user:
+            #         next_turn()
+            #     if user in self.players:
+            #         p = self.players[user]
+            #         serv.broadcast("Kicked %s (score: %s) " % (p.name,p.score))
+            #         del self.players[user]
         else:
             if not msg:
                 self.restart()
