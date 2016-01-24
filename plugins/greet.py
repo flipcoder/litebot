@@ -5,7 +5,7 @@ greeting_words = [
     "howdy","sup","wasup","whatsup","whats up","what's up"
 ]
 leaving_words = [
-    "bye","cya","seeya","later","bai","im out"
+    "bye","cya","seeya","bai"
 ]
 laughing_words = [
     "lol","lolz","hehe","haha","i don't get it","rofl",
