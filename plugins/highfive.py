@@ -1,7 +1,7 @@
 def highfive(ctx, serv, nick, dest, msg):
     if msg=="\o":
         serv.say(dest, "o/")
-    if msg=="o/":
+    elif msg=="o/":
         serv.say(dest, "\o")
     elif msg=="o'":
         serv.say(dest, "'o")
