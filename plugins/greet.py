@@ -36,7 +36,22 @@ reactions = [
     "I will always cherish the initial misconceptions I had about you.",
     "Who me? I just wander from room to room.",
     "I'm not being rude. You're just insignificant.",
-    "It's a thankless job, but I've got a lot of Karma to burn off."
+    "It's a thankless job, but I've got a lot of Karma to burn off.",
+    "Is your ass jealous of the amount of shit that just came out of your mouth?",
+    "I'm not saying I hate you, but I would unplug your life support to charge my phone.",
+    "What’s the difference between you and eggs? Eggs get laid and you don't.",
+    "Roses are red, violets are blue, I have 5 fingers, the 3rd ones for you.",
+    "Your birth certificate is an apology letter from the condom factory.",
+    "I bet your brain feels as good as new, seeing that you never use it.",
+    "If you are going to be two faced, at least make one of them pretty.",
+    "I wasn't born with enough middle fingers to let you know how I feel about you.",
+    "You must have been born on a highway because that's where most accidents happen.",
+    "I’m jealous of all the people that haven't met you!",
+    "You're so ugly, when your mom dropped you off at school she got a fine for littering.",
+    "Two wrongs don't make a right, take your parents as an example.",
+    "If laughter is the best medicine, your face must be curing the world.",
+    "How many times do I have to flush to get rid of you?",
+    "You shouldn't play hide and seek, no one would look for you."
 ]
 
 last_greet = 0.0

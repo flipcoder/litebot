@@ -11,6 +11,7 @@ HAND_SIZE = 10
 MIN_PLAYERS = 2
 HISTORY_LEN = 100
 MIN_PLAYERS = 2
+HAND_SIZE = 10
 JOIN_MSG = "Type %%join to join the game. Players: %s"
 CARDS = {}
 cards_file = os.path.join(
@@ -32,6 +33,7 @@ class Player:
     def __init__(self, name, game, **kwargs):
         self.name = name
         self.score = 0
+        self.hand_size = HAND_SIZE
         self.hand = []
         self.selection = []
         self.cpu = kwargs.get('cpu', False)
@@ -43,11 +45,11 @@ class Player:
 
     # draw until hand is full
     def fill(self):
-        count = HAND_SIZE - len(self.hand)
+        count = self.hand_size - len(self.hand)
         for r in range(count):
             while True:
                 r = self.game.random_alg('white')
-                if r == 'WILDCARD' or r not in self.hand:
+                if r == 'WILDCARD' or r not in self.hand: # no dupes
                     break
             self.hand += [r]
 
@@ -184,6 +186,7 @@ class Game:
                         serv.say(nick, 'You already picked that card. Pick a different one.')
                         return
                     p.selection += [pick]
+                    p.last_answer = pick
                     p.hand[int(msg)-1] = "" # blank cards to avoid repick and preserve offsets
                     
                     if p.selection and p.selection[-1] == "WILDCARD":
@@ -192,6 +195,30 @@ class Game:
                         self.poll()
                     else:
                         serv.say(p.name, 'Pick next card (#%s): ' % (len(p.selection)+1))
+                elif len(p.selection) == self.black_blanks:
+                    pick = None
+                    try:
+                        pick = p.hand[int(msg)-1]
+                    except ValueError, e:
+                        return
+                    except IndexError, e:
+                        return
+                    except:
+                        return
+                    if not pick: # previously picked cards are blanked
+                        serv.say(nick, 'You already picked that card.')
+                        return
+
+                    p.selection[-1] = pick
+                    for c in p.hand: # put back in last answer
+                        if c == "":
+                            c = p.last_answer
+                            break
+                    p.last_answer = pick
+                    p.hand[int(msg)-1] = ""
+                    
+                    if p.selection and p.selection[-1] == "WILDCARD":
+                        serv.say(p.name, "You have chosen wildcard. Enter card text:")
         
         elif self.stage == Stage.czar:
             if nick == self.czar:
@@ -262,6 +289,7 @@ class Game:
         serv.broadcast('%s is now card czar.' % self.czar)
         self.black = self.random_alg('black')
         self.black_blanks = max(1, self.black.count('_'))
+
         serv.broadcast(self.black)
         
         for p in self.players.values():
