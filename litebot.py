@@ -164,6 +164,10 @@ if __name__=='__main__':
                 if not TEST:
                     
                     buf = sock.recv(4096)
+                    if not buf:
+                        raise EOFError
+                    
+                    # print "buf (hex): " + str(buf).encode("hex")
                     
                     if buf.find("PING") != -1:
                         sock.send("PONG %s\r\n" % buf.split()[1]+"\n")
@@ -186,16 +190,16 @@ if __name__=='__main__':
                         if bang_idx == -1:
                             continue
                         tokens = []
-                        print "buf: " + str(buf)
+                        # print "buf: " + str(buf)
                         tokens += [buf[1:bang_idx]]
                         tokens += buf[bang_idx+1:].split(":")
-                        print 'tokens: ' + str(tokens)
-                        print str(buf)
+                        # print 'tokens: ' + str(tokens)
+                        # print str(buf)
                         
                         nick = tokens[0]
                         dest = tokens[1].split()[2]
                         msg = ':'.join(tokens[2:]).rstrip()
-                        print 'nick: %s, dest: %s, msg: %s' % (nick,dest,msg)
+                        # print 'nick: %s, dest: %s, msg: %s' % (nick,dest,msg)
                     
                     if TEST:
                         dest = CHANS[0]
@@ -235,11 +239,10 @@ if __name__=='__main__':
                 
             
             except EOFError, e:
-                print e
                 serv.on_quit.emit(serv, include_context=True)
                 break # may reconnect depending on settings
 
             except Exception, e:
-                print e
+                print "Exception"
                 handle_error(serv, e, errors, GODS, ERROR_SPAM, logged_in)
 
