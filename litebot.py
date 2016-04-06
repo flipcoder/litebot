@@ -114,6 +114,7 @@ if __name__=='__main__':
     PLUGINS = None
     RECONNECT = False
     ERROR_SPAM = 100
+    IGNORE = []
 
     config_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
@@ -206,9 +207,12 @@ if __name__=='__main__':
                         nick = test_nick
                         msg = raw_input('%s> ' % test_nick)
                     
+                    ignore = nick in IGNORE
+                    
                     if not TEST or msg:
-                        serv.on_msg.emit(serv, nick, dest, msg,
-                            include_context=True, allow_break=True)
+                        if not ignore:
+                            serv.on_msg.emit(serv, nick, dest, msg,
+                                include_context=True, allow_break=True)
                     
                     if TEST:
                         if msg.startswith("/n ") or msg.startswith("/nick "):
@@ -218,25 +222,25 @@ if __name__=='__main__':
                             test_nick = 'user'
                         
                     if msg=="%" or msg=="%help":
-                        serv.about("about", nick, dest, msg, PLUGINS)
-                        continue
+                        if not ignore:
+                            serv.about("about", nick, dest, msg, PLUGINS)
+                            continue
 
                     if msg and msg.startswith("%"):
-                        
-                        msg = msg[1:]
-                        msg = msg.strip()
-                        chop = msg.find(" ")
-                        if chop != -1:
-                            cmd = msg[:chop]
-                            msg = msg[chop+1:]
-                        else:
-                            cmd = msg
-                            msg = ""
-                        serv.on_command.emit(serv, nick, dest, msg,
-                            include_context=True, limit_context=[cmd], force_break=True
-                        )
-                        continue
-                
+                        if not ignore:
+                            msg = msg[1:]
+                            msg = msg.strip()
+                            chop = msg.find(" ")
+                            if chop != -1:
+                                cmd = msg[:chop]
+                                msg = msg[chop+1:]
+                            else:
+                                cmd = msg
+                                msg = ""
+                            serv.on_command.emit(serv, nick, dest, msg,
+                                include_context=True, limit_context=[cmd], force_break=True
+                            )
+                            continue
             
             except EOFError, e:
                 serv.on_quit.emit(serv, include_context=True)
