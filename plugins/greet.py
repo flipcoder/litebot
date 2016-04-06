@@ -75,9 +75,7 @@ def greet_msg(ctx, serv, nick, dest, msg):
             if NICK in msg:
                 if t - last_greet > throttle:
                     last_greet = t
-                    serv.say(dest, random.choice(leaving_words))
-                serv.say(dest, nick+": "+random.choice(greeting_words))
-                last_greet = t
+                    serv.say(dest, nick+": "+random.choice(greeting_words))
                 return True
         
     for w in leaving_words:
