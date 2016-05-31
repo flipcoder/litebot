@@ -7,11 +7,11 @@ def url_msg(ctx, serv, nick, dest, msg):
     tokens = msg.split(' ')
     for t in tokens:
         if t.startswith("http://") or t.startswith("https://"):
-            serv.say(dest,
-                BeautifulSoup(
-                    urllib2.urlopen(t,context=ctx)
-                ).find('title').text
-            )
+            txt = BeautifulSoup(
+                urllib2.urlopen(t,context=ctx)
+            ).find('title').text
+            txt = BeautifulSoup(txt, convertEntities=BeautifulSoup.HTML_ENTITIES)
+            serv.say(dest, txt)
             continue
 
 serv.on_msg.connect(url_msg, "url")
