@@ -7,10 +7,11 @@ def url_msg(ctx, serv, nick, dest, msg):
     tokens = msg.split(' ')
     for t in tokens:
         if t.startswith("http://") or t.startswith("https://"):
+            from six.moves.html_parser import HTMLParser
             txt = BeautifulSoup(
                 urllib2.urlopen(t,context=ctx)
             ).find('title').text
-            txt = BeautifulSoup(txt, convertEntities=BeautifulSoup.HTML_ENTITIES)
+            txt = HTMLParser().unescape(txt)
             serv.say(dest, txt)
             continue
 
