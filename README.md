@@ -9,7 +9,8 @@ minimalistic cross-platform IRC bot w/ plug-ins
 
 ## Notes
 
-- Included plugins are fairly basic to serve as examples.
+- Fully playble card game plug-in inspired by Cards Against Humanity.
+- Other plugins are fairly basic and serve as examples.
 - Custom plugins work by attaching functions to bot's signal handlers.
 
 ## LICENSE
