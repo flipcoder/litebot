@@ -109,7 +109,10 @@ TEST = bool(set(["-t","--test"]) & set(sys.argv[1:]))
 
 if __name__=='__main__':
     
-    import readline
+    if os.name == "nt":
+        import pyreadline as readline
+    else:
+        import readline
     
     PLUGINS = None
     RECONNECT = False

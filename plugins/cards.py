@@ -234,7 +234,7 @@ class Game:
                 if not p.cpu:
                     serv.broadcast("%s gains 1 point with: %s" % (p.name, ', '.join(p.selection)))
                 else:
-                    serv.broadcast("Beaten by a robot. Humanity must suffer the consequences.")
+                    serv.broadcast("Beaten by a robot: %s" % ', '.join(p.selection))
                     #if random.randint(0,1):
                     #    self.players[self.czar].score -= 1
                     #    serv.broadcast("%s was attacked by a robot (-1 point)." % self.czar)
