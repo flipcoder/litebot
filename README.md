@@ -1,6 +1,6 @@
 # litebot
 
-minimalistic IRC bot w/ plug-ins
+minimalistic cross-platform IRC bot w/ plug-ins
 
 ## Configuration
 
